@@ -1,4 +1,4 @@
-package LDA;
+package Refactored;
 
 import java.lang.Math;
 import java.util.List;
@@ -24,7 +24,7 @@ public class SCVB {
 		D = numDocs;
 		C = corpusSize;
 
-		minibatches = new ArrayList<Minibatch>();
+		minibatch = new ArrayList<Minibatch>();
 
 		s = 1;
 		tau = 10;
@@ -64,35 +64,37 @@ public class SCVB {
 		double[][] gamma = new double[W][K];
 
 		//for each document in minibatch
-		for (Document d : minibatch){
+		for (Document d : minibatch.Docs){
 			//complete burn in passes
 			for( int b=0; b<burnIn; b++){
 				rhoTheta = s / Math.pow((10 + rhoTheta_t), kappa);
 				rhoTheta_t++;
-				for(Term t : d.termTable){
-					if(t>0){
-						for(int k=0; k<K; k++){
-							gamma[t][k] = ((nPhi[t][k] + eta) * (nTheta[d.docId][k] + alpha) / (nz[k] + eta * minibatch.M));
+				int t_ind = 0;
+				for(String t : d.termTable.keySet()){
+					
+					for(int k=0; k<K; k++){
+						gamma[t_ind][k] = ((nPhi[t_ind][k] + eta) * (nTheta[d.docId][k] + alpha) / (nz[k] + eta * minibatch.M));
 
-						nTheta[d.docId][k] = ((Math.pow((1 - rhoTheta), d.termDict[t]) * nTheta[d.docId][k])
-								+ ((1 - Math.pow((1 - rhoTheta), d.termDict[t])) * d.Cj * gamma[t][k]));
-						}
+					nTheta[d.docId][k] = ((Math.pow((1 - rhoTheta), d.termTable.get(t)) * nTheta[d.docId][k])
+							+ ((1 - Math.pow((1 - rhoTheta), d.termTable.get(t))) * d.Cj * gamma[t_ind][k]));
 					}
+					t_ind++;
 				}
 			}
 			rhoTheta = s / Math.pow((10 + rhoTheta_t), kappa);
 			rhoTheta_t++;
-			for(Term t : d.termTable){
-				if(t>0){
-					for(int k=0; k<K; k++){
-						gamma[t][k] = ((nPhi[t][k] + eta) * (nTheta[d.docId][k] + alpha) / (nz[k] + eta * minibatch.M));
-						nTheta[d.docId][k] = ((Math.pow((1 - rhoTheta), d.termDict[t]) * nTheta[d.docId][k])
-							+ ((1 - Math.pow((1 - rhoTheta), d.termDict[t])) * d.Cj * gamma[t][k]));
-						nPhiHat[t][k] = nPhiHat[t][k] + (C * gamma[t][k]/ minibatch.M);
-						nzHat[k] = nzHat[k] + (C * gamma[t][k]/ minibatch.M);
-					}
+			int t_ind = 0;
+			for(String t : d.termTable.keySet()){
+				
+				for(int k=0; k<K; k++){
+					gamma[t_ind][k] = ((nPhi[t_ind][k] + eta) * (nTheta[d.docId][k] + alpha) / (nz[k] + eta * minibatch.M));
+
+				nTheta[d.docId][k] = ((Math.pow((1 - rhoTheta), d.termTable.get(t)) * nTheta[d.docId][k])
+						+ ((1 - Math.pow((1 - rhoTheta), d.termTable.get(t))) * d.Cj * gamma[t_ind][k]));
 				}
+				t_ind++;
 			}
+			
 			rhoPhi = s / Math.pow((100 + rhoPhi_t), kappa);
 			rhoPhi_t++;
 			for (int k = 0; k < K; k++) {
