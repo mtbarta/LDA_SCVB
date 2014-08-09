@@ -1,11 +1,9 @@
-package Refactored;
+package lda;
 
 import java.lang.Math;
 import java.util.List;
 import java.util.ArrayList;
-/*
-TODO: create minibatch,document objects
-*/
+
 public class SCVB {
 	public int iterations, K,W,D,C,burnIn;
 	public int s, tau, rhoPhi_t, rhoTheta_t;
@@ -64,7 +62,7 @@ public class SCVB {
 		double[][] gamma = new double[W][K];
 
 		//for each document in minibatch
-		for (Document d : minibatch.Docs){
+		for (Document d : minibatch.docs){
 			//complete burn in passes
 			for( int b=0; b<burnIn; b++){
 				rhoTheta = s / Math.pow((10 + rhoTheta_t), kappa);

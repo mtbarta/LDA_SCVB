@@ -1,11 +1,16 @@
-package Refactored;
+package lda;
 
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionService;
@@ -15,52 +20,51 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import Refactored.Document;
+import lda.Document;
 
 //TODO: overload for Hadoop processing.
 //TODO: neither parameter does anything.
 public class Vectorizer {
-	public Vectorizer(int batchSize, int numDocs){
+	private int numDocs;
+	public Vectorizer(int numDocs){
+		this.numDocs = numDocs;
 	}
-	public List<Document> readAll(File fileDir) 
-	throws InterruptedException, ExecutionException{
+	public HashMap<Integer,Document> readAll(File fileDir) 
+	throws InterruptedException, ExecutionException, IOException{
 		//read each file. When each file is vectorized, put it in a minibatch.
 		//producer-consumer threading structure.
-		int NUM_THREADS = Runtime.getRuntime().availableProcessors();
-        BlockingQueue<LinkedList<String>> queue = new ArrayBlockingQueue<>(50);
+		final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
         ExecutorService service = Executors.newFixedThreadPool(NUM_THREADS);
         CompletionService<Document> completionService = 
         	       new ExecutorCompletionService<Document>(service);
-        List<Future<Document>> docs = new ArrayList<Future<Document>>();
-        for (int i = 0; i < (NUM_THREADS - 1); i++) {
-            docs.add(completionService.submit(new DocumentConsumer(queue)));
-        }
+        
         // Wait for ReadFile to complete
-        service.submit(new ReadFile(queue, fileDir)).get();
+        service.submit(new ReadFile(completionService, fileDir)).get();
         service.shutdownNow();  // interrupt CPUTasks
-        // Wait for DocumentConsumer to complete
-        service.awaitTermination(365, TimeUnit.DAYS);
-		
+
 		//do things with processed docs.
-        List<Document> Documents = new ArrayList<Document>();
-        for(Future<Document> d : docs){
+        HashMap<Integer,Document> documents = new HashMap<Integer,Document>(this.numDocs);
+        while(!service.isTerminated()){
         	try{
-        	Document doc = d.get();
-        	Documents.add(doc);
-        	System.out.println(Integer.toString(doc.Cj));
+	        	Document doc = completionService.take().get();
+	        	//need concurrent array
+	        	documents.put(doc.docId,doc);
         	} catch(ExecutionException e) {
         		e.getCause();e.printStackTrace();
         	}
         }
-        return Documents;
+        service.awaitTermination(365, TimeUnit.DAYS);
+        return documents;
 	}
-	/*
-	public static void main(String[] args) throws FileNotFoundException {
+	
+	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
+		long startTime = System.currentTimeMillis();
 		File file = new File("./text");
 		
-		Vectorizer vec = new Vectorizer(1,1);
+		Vectorizer vec = new Vectorizer(5);
 		try {
 			vec.readAll(file);
 		} catch (InterruptedException e) {
@@ -70,13 +74,17 @@ public class Vectorizer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		long endTime = System.currentTimeMillis();
+		long totalTime = endTime - startTime;
+		System.out.print("Runtime: ");
+		System.out.print(totalTime);
 	}
-	*/
-	public List<Minibatch> createMinibatches(ArrayList<Document> docs,
+	
+	public List<Minibatch> createMiniBatches(HashMap<Integer,Document> docs,
 									int miniBatchSize, int numDocs){
 		List<Minibatch> result = new ArrayList<Minibatch>();
 		Minibatch mb = new Minibatch();
-		for(int i=1; i<= numDocs; i++){
+		for(int i=0; i< numDocs; i++){
 			mb.docs.add(docs.get(i));
 			if (i % miniBatchSize == 0){
 				result.add(mb);

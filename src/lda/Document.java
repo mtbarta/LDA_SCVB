@@ -1,9 +1,9 @@
-package Refactored;
+package lda;
+
 
 import java.util.HashMap;
-import java.util.Map;
 
-public class Document {
+public class Document{
 	int docId, Cj;
 	HashMap<String,Integer> termTable;
 	public Document(int id,int Cj, HashMap<String,Integer> termMap){

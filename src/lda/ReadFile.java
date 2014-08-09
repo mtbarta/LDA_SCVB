@@ -1,47 +1,48 @@
-package Refactored;
+package lda;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.TimeUnit;
 
 public class ReadFile implements Runnable {
 
-    private final BlockingQueue<LinkedList<String>> queue;
+    //private final BlockingQueue<LinkedList<String>> queue;
+	private CompletionService<Document> cs;
     private final File fileDir;
     private int count = 1;
+    private Scanner s;
 
-    public ReadFile(BlockingQueue<LinkedList<String>> queue, File fileDir) {
-        this.queue = queue;
+    public ReadFile(CompletionService<Document> cs, File fileDir) {
         this.fileDir = fileDir;
+        this.cs = cs;
     }
 
     @Override
     public void run() {
         try {
             for (File file : this.fileDir.listFiles()) {
-            	if(file == null) break;
+            	//if(file == null) break;
             	LinkedList<String> tempFile = new LinkedList<String>();
             	tempFile.add(Integer.toString(this.count));
+            	this.count++;
             	//TODO: add processing features
-                Scanner s = new Scanner(file);
+                s = new Scanner(file);
                 String line;
                 while (s.hasNext()) {
                 	line = s.next();
                 	tempFile.add(line);
                 }
-                // block if the queue is full
-                queue.offer(tempFile, 365, TimeUnit.DAYS);
+                cs.submit(new DocumentConsumer(tempFile));
             } 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			//s.close();
+        } finally {
+			s.close();
 		}
     }
 }
