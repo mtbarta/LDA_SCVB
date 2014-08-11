@@ -23,7 +23,7 @@ public class HashMapSort {
             public int compare(Entry<String, Double> o1,
                     Entry<String, Double> o2)
             {
-            	return o1.getValue().compareTo(o2.getValue());
+            	return o2.getValue().compareTo(o1.getValue());
             }
         });
 

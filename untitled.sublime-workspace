@@ -16,27 +16,16 @@
 	"buffers":
 	[
 		{
-			"contents": "package LDA;\n\nimport java.io.*;\nimport java.util.*;\nimport java.util.concurrent.*;\n\npublic class DictVectorizer {\n    private int numDocs;\n\n    public DictVectorizer( FileStream x, int numDocs) \n    {\n        this.numDocs = numDocs;\n    }\n\n    public run(ArrayList listFiles)\n    {\n\n        //BufferedReader reader = new BufferedReader(new FileReader(file));\n        int NUM_THREADS = Runtime.getRuntime().availableProcessors();\n		ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);\n		CompletionService<Document> completionService = new ExecutorCompletionService<Document>(executor);\n\n		for (File f : files) futures.add(completionService.submit(new Vectorizer(f)));\n\n		for(int i = 0; i < futures.size(); i++) {\n		    Future<MyFileData> next = completionService.take();\n		    sequentialOperation(next.get());\n		}\n\n    }\n}\n",
-			"file": "src/LDA/FileProcess.java",
-			"file_size": 367,
-			"file_write_time": 130513337984424110,
+			"file": "LDA.py",
 			"settings":
 			{
-				"buffer_size": 839,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "src/LDA/Vectorizer.java",
-			"settings":
-			{
-				"buffer_size": 686,
+				"buffer_size": 3556,
 				"line_ending": "Unix",
-				"name": "package LDA;"
+				"name": "import json"
 			}
 		}
 	],
-	"build_system": "Packages/Java/JavaC.sublime-build",
+	"build_system": "Packages/Python/Python.sublime-build",
 	"command_palette":
 	{
 		"height": 243.0,
@@ -81,6 +70,8 @@
 	},
 	"file_history":
 	[
+		"/home/matt/Documents/Projects/LDA_SCVB/src/LDA/FileProcess.java",
+		"/home/matt/Documents/Projects/LDA_SCVB/src/LDA/Vectorizer.java",
 		"/home/matt/Documents/Projects/LDA_SCVB/src/FileProcess.java",
 		"/home/matt/Documents/Projects/LDA/src/LDA/FileProcess.java",
 		"/home/matt/Documents/Projects/LDA/src/LDA/LDA.java",
@@ -153,59 +144,33 @@
 			[
 				{
 					"buffer": 0,
-					"file": "src/LDA/FileProcess.java",
+					"file": "LDA.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 839,
+						"buffer_size": 3556,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								684,
-								684
+								663,
+								663
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Java/Java.tmLanguage"
+							"auto_name": "import json",
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
-						"translation.x": 24.0,
-						"translation.y": 0.0,
+						"translation.x": 0.0,
+						"translation.y": 187.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "src/LDA/Vectorizer.java",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 686,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								629,
-								629
-							]
-						],
-						"settings":
-						{
-							"auto_name": "package LDA;",
-							"syntax": "Packages/Java/Java.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
 					"type": "text"
 				}
 			]

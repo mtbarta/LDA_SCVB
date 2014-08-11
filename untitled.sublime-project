@@ -1,11 +1,4 @@
 {
-	"folders":
-	[
-		{
-			"follow_symlinks": true,
-			"path": "."
-		}
-	],
 	"javatar":
 	{
 		"source_folder": "/home/matt/Documents/Projects/LDA_SCVB/src"

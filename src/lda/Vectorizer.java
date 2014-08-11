@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import lda.Document;
 
 //TODO: overload for Hadoop processing.
-//TODO: neither parameter does anything.
 public class Vectorizer {
 	private int numDocs;
 	public Vectorizer(int numDocs){
@@ -36,50 +35,54 @@ public class Vectorizer {
 	throws InterruptedException, ExecutionException, IOException{
 		//read each file. When each file is vectorized, put it in a minibatch.
 		//producer-consumer threading structure.
+		
+		//error checking!
+		if (this.numDocs != fileDir.listFiles().length){
+			throw new IOException();
+		}
+		
 		final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
         ExecutorService service = Executors.newFixedThreadPool(NUM_THREADS);
         CompletionService<Document> completionService = 
         	       new ExecutorCompletionService<Document>(service);
-        
+        System.out.println("Submitting files to threads...");
         // Wait for ReadFile to complete
         service.submit(new ReadFile(completionService, fileDir)).get();
-        service.shutdownNow();  // interrupt CPUTasks
-
+        System.out.println("    Thread Pool shut down...");
+        service.shutdown();  // interrupt CPUTasks
+        
 		//do things with processed docs.
         HashMap<Integer,Document> documents = new HashMap<Integer,Document>(this.numDocs);
         while(!service.isTerminated()){
         	try{
 	        	Document doc = completionService.take().get();
-	        	//need concurrent array
 	        	documents.put(doc.docId,doc);
         	} catch(ExecutionException e) {
-        		e.getCause();e.printStackTrace();
+        		e.getCause();
+        		e.printStackTrace();
         	}
         }
         service.awaitTermination(365, TimeUnit.DAYS);
         return documents;
 	}
 	
-	public static void main(String[] args) throws IOException {
-		// TODO Auto-generated method stub
-		long startTime = System.currentTimeMillis();
-		File file = new File("./text");
-		
-		Vectorizer vec = new Vectorizer(5);
-		try {
-			vec.readAll(file);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		long endTime = System.currentTimeMillis();
-		long totalTime = endTime - startTime;
-		System.out.print("Runtime: ");
-		System.out.print(totalTime);
-	}
+//	public static void main(String[] args) throws IOException {
+//		long startTime = System.currentTimeMillis();
+//		File file = new File("./text");
+//		
+//		Vectorizer vec = new Vectorizer(5);
+//		try {
+//			vec.readAll(file);
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		} catch (ExecutionException e) {
+//			e.printStackTrace();
+//		}
+//		long endTime = System.currentTimeMillis();
+//		long totalTime = endTime - startTime;
+//		System.out.print("Runtime: ");
+//		System.out.print(totalTime);
+//	}
 	
 	public BlockingQueue<Minibatch> createMiniBatches(HashMap<Integer,Document> docs,
 									int miniBatchSize, int numDocs){
