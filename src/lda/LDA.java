@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import reader.Reader;
 import scvb.*;
 import util.Document;
+import util.HashMapSort;
 import util.Vocabulary;
 
 public class LDA {
@@ -63,9 +64,11 @@ public class LDA {
 		 * TODO: implement a way to read documents based off existing vocab.
 		 */
 		this.SCVB0 = new SCVB0(this.NUM_THREADS, this.numDocs,this.numWordsInCorpus , this.vocab);
-		
+		for(int i=0; i<this.iter; i++){
+			this.run();
+		}
 	}
-	public void update(){
+	public void run(){
 		System.out.println("LDA updates:");
 		//for each iteration of LDA, run the scvb algorithm.
 		for (int i=0; i<this.iter; i++){
@@ -102,6 +105,36 @@ public class LDA {
 	public double computeDocTopicProb(int docId, int topic){
 		return (scvb.SCVB0.getnTheta(docId,topic) + scvb.SCVB0.getAlpha())
 				/ this.docSizes.get(docId) + this.numTopics * scvb.SCVB0.getAlpha();
+	}
+	public double[][] docsTopicProbs(){
+		double[][] probs = new double[this.numDocs][this.numTopics];
+		for(int j=0; j<this.numDocs; j++){
+			for(int k=0; k<this.numTopics; k++){
+				double topicProb = computeDocTopicProb(j,k);
+			}
+		}
+		return probs;
+	}
+	public ArrayList<HashMap<String,Double>> termTopicProbs(int numTopWords){
+		ArrayList<HashMap<String,Double>> results = 
+				new ArrayList<HashMap<String,Double>>();
+		
+		for(int k=0; k<this.numTopics; k++){
+			HashMap<String,Double> justTopicResults = new HashMap<String,Double>(this.vocab.size());
+			for(String t : this.vocab.keySet()){
+				double prob = computeTermTopicProb(t,k);
+				justTopicResults.put(t, prob);
+			}
+			HashMap<String,Double> topicResults = 
+					HashMapSort.sortByValue(justTopicResults, numTopWords);
+			results.add(topicResults);
+		}
+		return results;
+	}
+	//TODO: perplexity.
+	public double computePerplexity(){
+		
+		return 1.0;
 	}
 	public void processing(String var){
 		if (var.equals("online")){
