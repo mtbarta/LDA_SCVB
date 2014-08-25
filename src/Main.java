@@ -1,3 +1,5 @@
+import java.io.FileNotFoundException;
+
 import lda.LDA;
 
 
@@ -17,10 +19,11 @@ public class Main {
 		 * implement settings functions in LDA.
 		 * 
 		 */
-		LDA lda = new LDA(5, 5, 5);
+		LDA lda = new LDA(5, 4, 5);
 		lda.processing("batch");
 		
-		lda.train("/text");
+		lda.train("./text");
+
 
 	}
 

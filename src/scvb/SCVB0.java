@@ -1,9 +1,7 @@
 package scvb;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import util.Vocabulary;
@@ -141,48 +139,10 @@ public class SCVB0 implements Runnable{
 			}
 		}
 	}
+
 	/*
-	public void normalize(){
-		Collection<Term> vocabulary = this.vocab.values();
-		
-		for(int k=0; k<K; k++){
-			double k_tot = 0;
-			for(Term term : vocabulary){
-				k_tot += SCVB0.nPhi[term.getWordId()][k];
-			}
-			for(Term term : vocabulary){
-				double temp = SCVB0.nPhi[term.getWordId()][k] / k_tot;
-				synchronized(SCVB0.nPhi){
-					SCVB0.nPhi[term.getWordId()][k] = temp;
-				}
-				term.setProb(k,temp);
-			}
-		}
-		double sumProb = 0;
-		double perplexity = 0;
-		//make below concurrent?
-		for(int d=0; d< D; d++){
-			double k_tot = 0;
-			for(int k=0; k<K; k++){
-				k_tot += SCVB0.nTheta[d][k];
-			}
-			double summation = 0.0;
-			for(int k=0; k<K; k++){
-				double temp = SCVB0.nTheta[d][k] / k_tot;
-				synchronized(SCVB0.nTheta){
-					SCVB0.nTheta[d][k] = temp;
-				}
-				for(Term term : vocabulary){
-					summation += (temp * (term.getProb().get(k)));
-				}
-				sumProb += (Math.log(summation) / Math.log(2));
-			}
-		}
-		double temp = (-sumProb) / this.C;
-		perplexity = Math.pow(2, temp);
-		System.out.println("Perplexity: "+perplexity);
-	}
-	*/
+	 * GETTERS AND SETTERS
+	 */
 	public static double getnPhi(int term, int topic) {
 		return nPhi[term][topic];
 	}
@@ -203,6 +163,18 @@ public class SCVB0 implements Runnable{
 	}
 	public static int getMinibatchSize() {
 		return minibatches.size();
+	}
+	public static void setTau(int tau) {
+		SCVB0.tau = tau;
+	}
+	public static void setKappa(double kappa) {
+		SCVB0.kappa = kappa;
+	}
+	public static void setAlpha(double alpha) {
+		SCVB0.alpha = alpha;
+	}
+	public static void setEta(double eta) {
+		SCVB0.eta = eta;
 	}
 
 }
