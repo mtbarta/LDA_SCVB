@@ -6,22 +6,34 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 
 import util.Document;
+import util.Vocabulary;
 
 public class DocumentConsumer implements Callable<Document>{
-	//private final BlockingQueue<LinkedList<String>> queue;
 	private LinkedList<String> doc;
 	private int docCount;
+	private Vocabulary vocab;
 	
     public DocumentConsumer(LinkedList<String> doc) {
         //this.queue = queue;
     	this.doc = doc;
     	this.docCount = 0;
     }
-
+    public DocumentConsumer(LinkedList<String> doc, Vocabulary vocab) {
+        //this.queue = queue;
+    	this.doc = doc;
+    	this.docCount = 0;
+    	this.vocab = vocab;
+    }
     public Document call() {
     	Document result = new Document();
 
-        HashMap<String,Integer> map = new HashMap<String,Integer>();
+        HashMap<String,Integer> map;
+        if (this.vocab != null){
+        	map = new HashMap<String,Integer>(this.vocab);
+        } else {
+        	map = new HashMap<String,Integer>();
+        }
+        
         int docNum;
         while(true) {
 
@@ -35,8 +47,12 @@ public class DocumentConsumer implements Callable<Document>{
 			            map.put(word, map.get(word) + 1);
 			            Cj++;
 			        } else {
-			            map.put(word, 1);
-			            Cj++;
+			        	if (this.vocab != null){
+			        		Cj++;
+			        	} else {
+				            map.put(word, 1);
+				            Cj++;
+			        	}
 			        }
 			    }
 			}

@@ -18,7 +18,6 @@ import util.Vocabulary;
 
 public class LDA {
 	private Vocabulary vocab;
-	// TODO:store doc sizes separately since it's all that needs to be kept.
 	private HashMap<Integer, Integer> docSizes;
 	private static SCVB0 SCVB0;
 	int numDocs, numWordsInCorpus, numTopics, iter;
@@ -50,7 +49,7 @@ public class LDA {
 		this.documentLocation = dataLoc;
 		Reader reader = new Reader();
 
-		// remove the assert below for better practice.
+		// remove the assert below for better practice?
 		if (this.processing.equals("batch")) {
 			assert new File(this.documentLocation).listFiles().length == this.batchSize;
 		}
@@ -71,17 +70,71 @@ public class LDA {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
+			
 		}
 		/*
 		 * TODO: implement a way to read documents based off existing vocab.
 		 */
-		this.SCVB0 = new SCVB0(this.NUM_THREADS, this.numDocs,
+		this.SCVB0 = new SCVB0(this.numTopics, this.numDocs,
 				this.numWordsInCorpus, this.vocab);
 
 			this.run();
 	}
-
+	
+	public void train(String dataLoc, String vocabLoc) 
+	 {
+		this.documentLocation = dataLoc;
+		Reader reader = new Reader();
+		
+		// remove the assert below for better practice?
+		if (this.processing.equals("batch")) {
+			assert new File(this.documentLocation).listFiles().length == this.batchSize;
+		}
+		/*
+		* 
+		*/
+		if (this.createVocabulary == true) {
+			ArrayList<Document> docs;
+			try{
+				System.out.println("Reading Files...");
+				docs = reader.readAll(this.documentLocation, this.numDocs, this.NUM_THREADS);
+		
+				this.numWordsInCorpus = reader.getWordsInCorpus();
+				this.docSizes = reader.getDocSizes();
+				this.vocab = new Vocabulary(docs);
+				
+			}catch(InterruptedException | ExecutionException | IOException e){
+				e.printStackTrace();
+				System.exit(1);
+			}
+			
+		} else {
+			this.createVocabulary = false;
+			ArrayList<Document> docs;
+			
+			
+			try{
+				System.out.println("Reading Files...");
+				this.vocab = new Vocabulary(vocabLoc);
+				
+				docs = reader.readAll(this.documentLocation, this.numDocs, this.NUM_THREADS);
+		
+				this.numWordsInCorpus = reader.getWordsInCorpus();
+				this.docSizes = reader.getDocSizes();
+			}catch(InterruptedException | ExecutionException | IOException e){
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		/*
+		* TODO: implement a way to read documents based off existing vocab.
+		*/
+		this.SCVB0 = new SCVB0(this.numTopics, this.numDocs,
+				this.numWordsInCorpus, this.vocab);
+		
+			this.run();
+		}
+	
 	public void run() {
 		System.out.println("LDA updates:");
 		// for each iteration of LDA, run the scvb algorithm.
@@ -138,7 +191,7 @@ public class LDA {
 
 	public ArrayList<HashMap<String, Double>> termTopicProbs(int numTopWords) {
 		ArrayList<HashMap<String, Double>> results = new ArrayList<HashMap<String, Double>>();
-		
+		/* returns an arrayList of word,prob pairings for each topic. */
 		for (int k = 0; k < this.numTopics; k++) {
 			HashMap<String, Double> justTopicResults = new HashMap<String, Double>(
 					this.vocab.size());
@@ -153,7 +206,6 @@ public class LDA {
 		
 		//normalizing results.
 		HashMap<String,Double> denoms = new HashMap<String,Double>(results.size());
-		//weird because result is list of hashmaps.
 		for (HashMap<String,Double> map : results){
 			for(String t : map.keySet()){
 				if (!denoms.containsKey(t)){
@@ -170,9 +222,9 @@ public class LDA {
 		}
 		for (HashMap<String,Double> map : results){
 			for (String t : map.keySet()){
-				double unnorm = map.get(t);
-				double norm = unnorm / denoms.get(t);
-				map.put(t, norm);
+				double unnormT = map.get(t);
+				double normT = unnormT / denoms.get(t);
+				map.put(t, normT);
 			}
 		}
 		return results;

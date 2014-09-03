@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import scvb.Minibatch;
 import util.Document;
+import util.Vocabulary;
 
 /*
  * TODO: implement an iterator based on minibatch size.
@@ -73,6 +74,49 @@ public class Reader {
         return documents;
 	}
 	
+	public ArrayList<Document> readAll(String fileDir, Vocabulary vocab, int numDocs, int numThreads) 
+			throws InterruptedException, ExecutionException, IOException{
+		//read each file. When each file is vectorized, put it in a minibatch.
+		//producer-consumer threading structure.
+		/*
+		URL file2 = getClass().getResource(fileDir);
+		if (file2 == null){
+			throw new FileNotFoundException("Directory location not found");
+		}
+		String filePath = file2.getPath();
+        filePath = filePath.replaceFirst("/","");
+        */
+		File directory = new File(fileDir);
+		
+		//error checking!
+		if (numDocs != directory.listFiles().length){
+			throw new IOException("Documents specified is not the same as amount in Directory.");
+		}
+				
+        ExecutorService service = Executors.newFixedThreadPool(numThreads);
+        CompletionService<Document> completionService = 
+        	       new ExecutorCompletionService<Document>(service);
+        System.out.println("Submitting files to threads...");
+        // Wait for ReadFile to complete
+        service.submit(new ReadFile(completionService, directory, vocab)).get();
+        System.out.println("    Thread Pool shut down...");
+        service.shutdown();  // interrupt CPUTasks
+        
+		//do things with processed docs.
+        ArrayList<Document> documents = new ArrayList<Document>(numDocs);
+        while(!service.isTerminated()){
+        	try{
+	        	Document doc = completionService.take()
+	        			.get();
+	        	documents.add(doc);
+        	} catch(ExecutionException e) {
+        		e.getCause();
+        		e.printStackTrace();
+        	}
+        }
+        service.awaitTermination(365, TimeUnit.DAYS);
+        return documents;
+	}
 	/*
 	 * GETTERS
 	 */

@@ -10,6 +10,7 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.TimeUnit;
 
 import util.Document;
+import util.Vocabulary;
 
 public class ReadFile implements Runnable {
 
@@ -18,10 +19,16 @@ public class ReadFile implements Runnable {
     private final File fileDir;
     private int count = 0;
     private Scanner s;
+    private Vocabulary vocab;
 
     public ReadFile(CompletionService<Document> cs, File fileDir) {
         this.fileDir = fileDir;
         this.cs = cs;
+    }
+    public ReadFile(CompletionService<Document> cs, File fileDir, Vocabulary vocab) {
+        this.fileDir = fileDir;
+        this.cs = cs;
+        this.vocab = vocab;
     }
 
     @Override
@@ -39,7 +46,11 @@ public class ReadFile implements Runnable {
                 	line = s.next();
                 	tempFile.add(line);
                 }
-                cs.submit(new DocumentConsumer(tempFile));
+                if (this.vocab != null){
+                	cs.submit(new DocumentConsumer(tempFile,this.vocab));
+                } else {
+                	cs.submit(new DocumentConsumer(tempFile));
+                }
             } 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
