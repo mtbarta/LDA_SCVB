@@ -13,7 +13,11 @@ import util.Document;
 import util.Vocabulary;
 
 public class ReadFile implements Runnable {
-
+	/*
+	 * A runnable class that implements a producer-consumer design for reading
+	 * files.
+	 * 
+	 */
     //private final BlockingQueue<LinkedList<String>> queue;
 	private CompletionService<Document> cs;
     private final File fileDir;
@@ -22,10 +26,19 @@ public class ReadFile implements Runnable {
     private Vocabulary vocab;
 
     public ReadFile(CompletionService<Document> cs, File fileDir) {
+    	/*
+    	 * @param cs is a completion service for documents.
+    	 * @param fileDir is the directory where files are stored.
+    	 */
         this.fileDir = fileDir;
         this.cs = cs;
     }
     public ReadFile(CompletionService<Document> cs, File fileDir, Vocabulary vocab) {
+    	/*
+    	 * @param cs is a completion service for documents.
+    	 * @param fileDir is the directory where files are stored.
+    	 * @param vocabulary is the Vocabulary object provided for the data.
+    	 */
         this.fileDir = fileDir;
         this.cs = cs;
         this.vocab = vocab;

@@ -16,10 +16,10 @@ public class Main {
 		 * implement settings functions in LDA.
 		 * 
 		 */
-		LDA lda = new LDA(1000, 4, 20);
+		LDA lda = new LDA(30, 1500, 20);
 		lda.processing("batch");
 		//almost ready for NIPS data set.
-		//lda.train("./text","vocabLoc");
+		lda.trainNIPS("./text/docword.nips.txt","./Vocab/vocab.nips.txt");
 
 		ArrayList<HashMap<String,Double>> termTopics = lda.termTopicProbs(10);
 		

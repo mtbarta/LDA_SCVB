@@ -18,7 +18,7 @@ public class SCVB0 implements Runnable{
 	private static double[] nz;
 	//private static double rhoPhi, rhoTheta;
 	
-	static ArrayList<Minibatch> minibatches;
+	private ArrayList<Minibatch> minibatches;
 	private static  AtomicInteger miniBatchCount = new AtomicInteger();
 	
 	private Vocabulary vocab;
@@ -31,7 +31,7 @@ public class SCVB0 implements Runnable{
 		SCVB0.C = numWordsInCorpus;
 		
 		this.vocab = vocab;
-		SCVB0.minibatches = new ArrayList<Minibatch>();
+		this.minibatches = new ArrayList<Minibatch>();
 		//step-size schedule parameters that are incorporated into rho.
 		SCVB0.s = 1;
 		SCVB0.tau = 10;
@@ -42,8 +42,10 @@ public class SCVB0 implements Runnable{
 		SCVB0.eta = 0.01;
 		
 		//nPhi: the number of times a word appears across the corpus.
+		//topic term count count.
 		nPhi = new double[W][K];
 		//nTheta: the number of times a word appears in document D.
+		//doc topic count.
 		nTheta = new double[D][K];
 		//nz: the expected number of words assigned to a topic.
 		nz = new double[K];
@@ -68,7 +70,7 @@ public class SCVB0 implements Runnable{
 		double[] nzHat = new double[K];
 		double[] gamma = new double[K];
 				
-		int bCount = SCVB0.miniBatchCount.intValue() % (SCVB0.minibatches.size() + 1);
+		int bCount = SCVB0.miniBatchCount.intValue() % (this.minibatches.size() + 1);
 		Minibatch minibatch = minibatches.get(bCount);
 		//variables dependent on each minibatch
 		//step-sizes and counts
@@ -95,6 +97,8 @@ public class SCVB0 implements Runnable{
 						gammaSum += gamma[k];
 					}
 					for(int k=0; k<K; K++){
+						gamma[k] = gamma[k] / gammaSum;
+						
 						double clumpingCONST = Math.pow((1 - rhoTheta), docTerms.get(t));
 						double partOne = clumpingCONST * SCVB0.nTheta[docId][k];
 						double partTwo = (1 - clumpingCONST) * docCj * gamma[k];
@@ -109,18 +113,22 @@ public class SCVB0 implements Runnable{
 				int termIndex = vocab.get(t);
 				double gammaSum = 0.0;
 				for(int k=0; k<K; k++){
+
 					gamma[k] = (SCVB0.nPhi[termIndex][k] + eta) / (nz[k] + eta * SCVB0.W)* (SCVB0.nTheta[docId][k] + alpha);
 					gammaSum += gamma[k];
 				}
 				for(int k=0; k<K; k++){
+					gamma[k] = gamma[k] / gammaSum;
+					
 					double clumpingCONST = Math.pow((1 - rhoTheta), docTerms.get(t));
 					double partOne = clumpingCONST * SCVB0.nTheta[docId][k];
 					double partTwo = (1 - clumpingCONST) * docCj * gamma[k];
 					SCVB0.nTheta[docId][k] = partOne + partTwo;
 					
 					//M = numWords in minibatch
-					nPhiHat[termIndex][k] = nPhiHat[termIndex][k] + (C * gamma[k]/ minibatch.getCj());
-					nzHat[k] = nzHat[k] + (C * gamma[k]/ minibatch.getCj());
+					//nphihat is word topic counts hat.
+					nPhiHat[termIndex][k] = nPhiHat[termIndex][k] + (C * gamma[k]); /// minibatch.getCj()
+					nzHat[k] = nzHat[k] + (C * gamma[k]); /// minibatch.getCj()
 				}
 			}
 			
@@ -131,6 +139,7 @@ public class SCVB0 implements Runnable{
 				for (int w = 0; w<W; w++) {
 					synchronized(SCVB0.nPhi){
 						SCVB0.nPhi[w][k] = ((1 - rhoPhi) * SCVB0.nPhi[w][k]) + (rhoPhi * nPhiHat[w][k]);
+
 					}
 				}
 				synchronized(SCVB0.nz){
@@ -143,26 +152,26 @@ public class SCVB0 implements Runnable{
 	/*
 	 * GETTERS AND SETTERS
 	 */
-	public static double getnPhi(int term, int topic) {
+	public double getnPhi(int term, int topic) {
 		return nPhi[term][topic];
 	}
-	public static double getnTheta(int doc, int topic) {
+	public double getnTheta(int doc, int topic) {
 		return nTheta[doc][topic];
 	}
-	public static double getEta() {
+	public double getEta() {
 		return eta;
 	}
-	public static int getW() {
+	public int getW() {
 		return W;
 	}
-	public static double getAlpha() {
+	public double getAlpha() {
 		return alpha;
 	}
 	public static double getNz(int topic) {
 		return nz[topic];
 	}
-	public static int getMinibatchSize() {
-		return minibatches.size();
+	public int getMinibatchSize() {
+		return this.minibatches.size();
 	}
 	public static void setTau(int tau) {
 		SCVB0.tau = tau;
@@ -175,6 +184,9 @@ public class SCVB0 implements Runnable{
 	}
 	public static void setEta(double eta) {
 		SCVB0.eta = eta;
+	}
+	public void addMinibatch(Minibatch mb){
+		this.minibatches.add(mb);
 	}
 
 }

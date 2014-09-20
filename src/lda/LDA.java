@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,7 +18,11 @@ import util.HashMapSort;
 import util.Vocabulary;
 
 public class LDA {
+	/*
+	 * the Latent Dirichlet Allocation class.
+	 */
 	private Vocabulary vocab;
+	private ArrayList<Document> docs;
 	private HashMap<Integer, Integer> docSizes;
 	private static SCVB0 SCVB0;
 	int numDocs, numWordsInCorpus, numTopics, iter;
@@ -37,7 +42,7 @@ public class LDA {
 		numDocs = docs;
 		numTopics = topics;
 		this.iter = iter;
-
+		
 		createVocabulary = true;
 		NUM_THREADS = 3;
 		processing = "batch";
@@ -45,7 +50,11 @@ public class LDA {
 	}
 
 	public void train(String dataLoc) 
-			 {
+	{
+		/*
+		 * trains the LDA model with only the data as input. Creates the vocab
+		 * automatically.
+		 */
 		this.documentLocation = dataLoc;
 		Reader reader = new Reader();
 
@@ -53,9 +62,6 @@ public class LDA {
 		if (this.processing.equals("batch")) {
 			assert new File(this.documentLocation).listFiles().length == this.batchSize;
 		}
-		/*
-		 * 
-		 */
 		if (this.createVocabulary == true) {
 			ArrayList<Document> docs;
 			try{
@@ -72,17 +78,22 @@ public class LDA {
 			}
 			
 		}
-		/*
-		 * TODO: implement a way to read documents based off existing vocab.
-		 */
 		this.SCVB0 = new SCVB0(this.numTopics, this.numDocs,
 				this.numWordsInCorpus, this.vocab);
 
 			this.run();
 	}
-	
+	/*
+	 * @param dataloc: location of the text files.
+	 * @param vocabloc: location of the vocabulary file.
+	 * 
+	 * returns void.
+	 */
 	public void train(String dataLoc, String vocabLoc) 
 	 {
+		/*
+		* reads data and vocab and runs the SCVB object.
+		*/
 		this.documentLocation = dataLoc;
 		Reader reader = new Reader();
 		
@@ -90,9 +101,7 @@ public class LDA {
 		if (this.processing.equals("batch")) {
 			assert new File(this.documentLocation).listFiles().length == this.batchSize;
 		}
-		/*
-		* 
-		*/
+		
 		if (this.createVocabulary == true) {
 			ArrayList<Document> docs;
 			try{
@@ -117,8 +126,10 @@ public class LDA {
 				System.out.println("Reading Files...");
 				this.vocab = new Vocabulary(vocabLoc);
 				
-				docs = reader.readAll(this.documentLocation, this.numDocs, this.NUM_THREADS);
-		
+				this.docs = reader.readAll(this.documentLocation, this.numDocs, this.NUM_THREADS,this.vocab);
+				/*
+				 * TODO: put docs into SCVB0.
+				 */
 				this.numWordsInCorpus = reader.getWordsInCorpus();
 				this.docSizes = reader.getDocSizes();
 			}catch(InterruptedException | ExecutionException | IOException e){
@@ -126,13 +137,44 @@ public class LDA {
 				System.exit(1);
 			}
 		}
-		/*
-		* TODO: implement a way to read documents based off existing vocab.
-		*/
-		this.SCVB0 = new SCVB0(this.numTopics, this.numDocs,
+
+		LDA.SCVB0 = new SCVB0(this.numTopics, this.numDocs,
 				this.numWordsInCorpus, this.vocab);
 		
-			this.run();
+		this.run();
+		}
+	public void trainNIPS(String dataLoc, String vocabLoc) 
+	 {
+		this.documentLocation = dataLoc;
+		Reader reader = new Reader();
+		
+		// remove the assert below for better practice?
+		if (this.processing.equals("batch")) {
+			assert new File(this.documentLocation).listFiles().length == this.batchSize;
+		}
+			this.NUM_THREADS = 1;
+			this.createVocabulary = false;
+			ArrayList<Document> docs;
+			
+			try{
+				System.out.println("Reading Files...");
+				//this.vocab = new HashMap<String,String>(vocabLoc);
+				this.vocab = new Vocabulary(vocabLoc);
+				this.docs = reader.readNIPS(this.documentLocation,vocabLoc);
+		
+				this.numWordsInCorpus = reader.getWordsInCorpus();
+				this.docSizes = reader.getDocSizes();
+			}catch(IOException e){
+				e.printStackTrace();
+				System.exit(1);
+			}
+		
+		Minibatch batch = new Minibatch(this.docs);
+			
+		LDA.SCVB0 = new SCVB0(this.numTopics, this.numDocs,
+				this.numWordsInCorpus, this.vocab);
+		LDA.SCVB0.addMinibatch(batch);
+		this.run();
 		}
 	
 	public void run() {
@@ -143,8 +185,8 @@ public class LDA {
 			if (this.NUM_THREADS > 1) {
 				ExecutorService scvbService = Executors
 						.newFixedThreadPool(this.NUM_THREADS);
-				for (int m = 0; m < scvb.SCVB0.getMinibatchSize(); m++) {
-					scvbService.submit(SCVB0);
+				for (int m = 0; m < LDA.SCVB0.getMinibatchSize(); m++) {
+					scvbService.submit(LDA.SCVB0);
 				}
 				scvbService.shutdown();
 				try {
@@ -155,7 +197,7 @@ public class LDA {
 				// SCVB0.normalize();
 				System.out.println("...... Done.");
 			} else {
-				SCVB0.run();
+				LDA.SCVB0.run();
 				// SCVB0.normalize();
 				System.out.println("...... Done.");
 			}
@@ -167,15 +209,18 @@ public class LDA {
 	 */
 	public double computeTermTopicProb(String term, int topic) {
 		int termIndex = this.vocab.get(term);
-		return (scvb.SCVB0.getnPhi(termIndex, topic) + scvb.SCVB0.getEta())
-				/ (scvb.SCVB0.getNz(topic) + scvb.SCVB0.getEta()
-						* scvb.SCVB0.getW());
+		
+		return (LDA.SCVB0.getnPhi(termIndex, topic) + LDA.SCVB0.getEta())
+				/ (scvb.SCVB0.getNz(topic) + LDA.SCVB0.getEta() + LDA.SCVB0.getW());
+		
+		//9-19 update
+		//return scvb.SCVB0.getnPhi(termIndex, topic);
 	}
 
 	public double computeDocTopicProb(int docId, int topic) {
-		return (scvb.SCVB0.getnTheta(docId, topic) + scvb.SCVB0.getAlpha())
+		return (LDA.SCVB0.getnTheta(docId, topic) + LDA.SCVB0.getAlpha())
 				/ this.docSizes.get(docId) + this.numTopics
-				* scvb.SCVB0.getAlpha();
+				* LDA.SCVB0.getAlpha();
 	}
 
 	public double[][] docsTopicProbs() {
@@ -192,22 +237,11 @@ public class LDA {
 	public ArrayList<HashMap<String, Double>> termTopicProbs(int numTopWords) {
 		ArrayList<HashMap<String, Double>> results = new ArrayList<HashMap<String, Double>>();
 		/* returns an arrayList of word,prob pairings for each topic. */
-		for (int k = 0; k < this.numTopics; k++) {
-			HashMap<String, Double> justTopicResults = new HashMap<String, Double>(
-					this.vocab.size());
-			for (String t : this.vocab.keySet()) {
-				double prob = computeTermTopicProb(t, k);
-				justTopicResults.put(t, prob);
-			}
-			HashMap<String, Double> topicResults = HashMapSort.sortByValue(
-					justTopicResults, numTopWords);
-			results.add(topicResults);
-		}
 		
-		//normalizing results.
+		//compute normalizing factor.
 		HashMap<String,Double> denoms = new HashMap<String,Double>(results.size());
-		for (HashMap<String,Double> map : results){
-			for(String t : map.keySet()){
+		for (String t : this.vocab.keySet()) {
+			//for (int k = 0; k < this.numTopics; k++) {
 				if (!denoms.containsKey(t)){
 					double denom = 1.0;
 					for (int k=0; k<this.numTopics; k++){
@@ -218,15 +252,38 @@ public class LDA {
 				} else {
 					continue;
 				}
-			}
+			//}
 		}
+		for (int k = 0; k < this.numTopics; k++) {
+			HashMap<String, Double> justTopicResults = new HashMap<String, Double>(
+					this.vocab.size());
+			for (String t : this.vocab.keySet()) {
+				double prob = computeTermTopicProb(t, k);
+				//9-19 update.
+				//double normTerm = Math.log(prob/ denoms.get(t));
+				//double normProb = prob * normTerm;
+				//if(normProb > 0){
+					justTopicResults.put(t, prob);
+				//}
+				
+			}
+			
+			HashMap<String, Double> topicResults = HashMapSort.sortByValue(
+					justTopicResults, numTopWords);
+			results.add(topicResults);
+			
+		}
+		
+		//normalizing results.
+		/*
 		for (HashMap<String,Double> map : results){
 			for (String t : map.keySet()){
 				double unnormT = map.get(t);
-				double normT = unnormT / denoms.get(t);
+				double normT = unnormT * Math.log(unnormT/ denoms.get(t));
 				map.put(t, normT);
 			}
 		}
+		*/
 		return results;
 	}
 
@@ -235,7 +292,10 @@ public class LDA {
 
 		return -1.0;
 	}
-
+	public ArrayList<Minibatch> createMinibatches (ArrayList<Document> docs){
+		
+		return null;
+	}
 	public void processing(String var) {
 		if (var.equals("online")) {
 			this.processing = "online";

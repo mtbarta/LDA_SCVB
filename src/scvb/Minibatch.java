@@ -11,11 +11,14 @@ public class Minibatch {
 	private int Cj;
 	public List<Document> docs;
 
-	public Minibatch(int Cj, ArrayList<Document> docList){
-		this.Cj = Cj;
+	public Minibatch(ArrayList<Document> docList){
+		this.Cj = 0;
+		for(Document doc : docList){
+			this.Cj += doc.getCj();
+		}
 		MB_COUNT++;
 		setIndex(MB_COUNT);
-		docs = docList;
+		this.docs = docList;
 	}
 	public Minibatch(){
 		Cj = 0;
@@ -27,7 +30,7 @@ public class Minibatch {
 		return index;
 	}
 	public void setIndex(int m) {
-		index = m;
+		this.index = m;
 	}
 	public int getCj() {
 		return Cj;
