@@ -8,6 +8,7 @@ LDA_SCVB
 
 This model allows you to specify *batch* or *online* processing. Future updates will create an update function.
 
+```Java
     //LDA(iterations, numDocs, numTopics)
     LDA lda = new LDA(30, 1500, 20);
     lda.processing("batch");
@@ -17,6 +18,7 @@ This model allows you to specify *batch* or *online* processing. Future updates 
     ArrayList<HashMap<String,Double>> termTopics = lda.termTopicProbs(10);
     
     Print.printTopicWords(termTopics);
+```
 
 ## Results
 
